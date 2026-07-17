@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignBridge AI — Indian Sign Language Communication Platform</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F7F6F2; --surface:#FFFFFF; --surface-2:#EFEDE6; --surface-3:#E6E3D9;
+    --text:#14181F; --text-muted:#5B6370;
+    --teal:#0F766E; --teal-strong:#0B5C56; --teal-soft:#E4F3F1;
+    --amber:#F5A524; --amber-soft:#FDF1DA;
+    --violet:#7C4DFF; --violet-soft:#EFE9FF;
+    --coral:#EF6461; --coral-soft:#FCE9E8;
+    --border:#E2DFD6;
+    --shadow: 0 1px 2px rgba(20,24,31,0.04), 0 8px 24px -12px rgba(20,24,31,0.12);
+  }
+  html.dark{
+    --bg:#0A0F1A; --surface:#121A2B; --surface-2:#182136; --surface-3:#202B44;
+    --text:#EDEFF4; --text-muted:#94A0B8;
+    --teal:#2DD4BF; --teal-strong:#5EEAD4; --teal-soft:#0F2C2A;
+    --amber:#FBBF24; --amber-soft:#2B2308;
+    --violet:#A78BFA; --violet-soft:#211A3B;
+    --coral:#F2857F; --coral-soft:#2B1717;
+    --border:#233047;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 30px -14px rgba(0,0,0,0.6);
+  }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; transition:background .25s ease,color .25s ease; overflow:hidden; }
+  .font-display{ font-family:'Fraunces',serif; }
+  .font-mono{ font-family:'IBM Plex Mono',monospace; }
+  .bg-surface{ background:var(--surface); }
+  .bg-surface-2{ background:var(--surface-2); }
+  .bg-surface-3{ background:var(--surface-3); }
+  .text-muted{ color:var(--text-muted); }
+  .border-token{ border-color:var(--border); }
+  .shadow-token{ box-shadow:var(--shadow); }
+  .text-teal{ color:var(--teal); } .bg-teal{ background:var(--teal); } .bg-teal-soft{ background:var(--teal-soft); }
+  .text-amber{ color:var(--amber); } .bg-amber{ background:var(--amber); } .bg-amber-soft{ background:var(--amber-soft); }
+  .text-violet{ color:var(--violet); } .bg-violet{ background:var(--violet); } .bg-violet-soft{ background:var(--violet-soft); }
+  .text-coral{ color:var(--coral); } .bg-coral{ background:var(--coral); } .bg-coral-soft{ background:var(--coral-soft); }
+  .btn-primary{ background:var(--teal); color:#F7FFFD; }
+  .btn-primary:hover{ background:var(--teal-strong); }
+  .btn-ghost{ background:transparent; border:1px solid var(--border); color:var(--text); }
+  .btn-ghost:hover{ background:var(--surface-2); }
+  .view{ display:none; }
+  .view.active{ display:block; }
+  .nav-item{ color:var(--text-muted); }
+  .nav-item.active{ color:var(--teal); background:var(--teal-soft); }
+  .nav-item:hover:not(.active){ background:var(--surface-2); }
+  ::-webkit-scrollbar{ height:8px; width:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:8px; }
+  .focus-ring:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; border-radius:6px; }
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; }
+  button:disabled{ opacity:.55; cursor:not-allowed; }
+
+  @keyframes signPop{ 0%{ transform:translateY(10px) scale(.85); opacity:0; } 55%{ transform:translateY(-4px) scale(1.05); opacity:1; } 100%{ transform:translateY(0) scale(1); opacity:1; } }
+  .sign-glyph{ animation: signPop .45s cubic-bezier(.2,.8,.2,1) both; }
+  body.slow-signs .sign-glyph{ animation-duration:.9s; }
+  @keyframes railGlow{ 0%,100%{ box-shadow:0 0 0 rgba(15,118,110,0); } 50%{ box-shadow:0 0 0 6px var(--teal-soft); } }
+  .rail-active{ animation: railGlow 2.2s ease-in-out infinite; }
+  @keyframes pulseDot{ 0%,100%{ opacity:.35; } 50%{ opacity:1; } }
+  .pulse-dot{ animation: pulseDot 1.4s ease-in-out infinite; }
+  @keyframes floaty{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-6px);} }
+  .floaty{ animation: floaty 3.5s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce){
+    .sign-glyph, .rail-active, .pulse-dot, .floaty{ animation:none !important; }
+  }
+
+  input[type=text], input[type=email], input[type=password], select, textarea{
+    background:var(--surface); border:1px solid var(--border); color:var(--text);
+  }
+  .badge{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.04em; }
+  .progress-track{ background:var(--surface-3); }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:8px; }
+  .modal-backdrop{ background:rgba(10,14,22,0.55); }
+  .meter{ background:var(--surface-3); height:8px; border-radius:999px; overflow:hidden; }
+  .meter > span{ display:block; height:100%; background:var(--teal); border-radius:999px; transition:width .35s ease; }
+  .seg-btn.active{ background:var(--teal-soft); color:var(--teal); border-color:var(--teal); }
+  .landmark-dot{ position:absolute; width:8px; height:8px; border-radius:999px; background:var(--amber); box-shadow:0 0 0 4px rgba(245,165,36,.22); }
+  .mono-box{ font-family:'IBM Plex Mono',monospace; font-size:12px; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:10px; }
+  .app-scroll{ height:calc(100vh - 65px); overflow-y:auto; }
+  .lesson-stage{ min-height:clamp(280px, 42vh, 520px); }
+  @media (max-width: 767px){
+    body{ overflow:auto; }
+    .app-scroll{ height:auto; overflow:visible; }
+  }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ============ APP SHELL ============ -->
+<div id="app" class="flex h-screen">
+
+  <!-- Sidebar (desktop) -->
+  <aside class="hidden md:flex flex-col w-60 shrink-0 border-r border-token bg-surface px-3 py-4 gap-4">
+    <div class="flex items-center gap-3 px-2">
+      <div class="w-10 h-10 rounded-xl bg-teal flex items-center justify-center shrink-0">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 15c3-6 6-9 8-9s5 3 8 9" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="4" cy="16" r="2" fill="#fff"/><circle cx="20" cy="16" r="2" fill="#fff"/></svg>
+      </div>
+      <div>
+        <p class="font-display font-bold text-lg leading-none">SignBridge</p>
+        <p class="text-[11px] text-muted font-mono tracking-wide">AI · ISL PLATFORM</p>
+      </div>
+    </div>
+
+    <nav id="sidebar-nav" class="flex flex-col gap-1 text-sm font-medium"></nav>
+
+    <div class="mt-auto card p-3">
+      <p class="text-xs text-muted mb-2">Today's streak</p>
+      <div class="flex items-center gap-2">
+        <span class="text-2xl" id="sidebar-streak-flame">🔥</span>
+        <span class="font-display font-bold text-xl" id="sidebar-streak-count">0</span>
+        <span class="text-xs text-muted">days</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main column -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- Topbar -->
+    <header class="sticky top-0 z-30 bg-surface/90 backdrop-blur border-b border-token">
+      <div class="flex items-center justify-between gap-3 px-4 md:px-8 py-3">
+        <div class="flex items-center gap-3 md:hidden">
+          <div class="w-8 h-8 rounded-lg bg-teal flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 15c3-6 6-9 8-9s5 3 8 9" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="font-display font-bold">SignBridge</span>
+        </div>
+
+        <div class="hidden md:block">
+          <p class="text-xs text-muted">Namaste 👋</p>
+          <p class="font-display font-semibold" id="topbar-greeting">Welcome back</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <select id="lang-select" aria-label="Interface language" class="text-sm rounded-lg px-2 py-2 focus-ring border-token"></select>
+
+          <button id="theme-toggle" aria-label="Toggle dark mode" class="w-10 h-10 rounded-lg btn-ghost flex items-center justify-center focus-ring">
+            <span id="theme-icon">🌙</span>
+          </button>
+
+          <button id="auth-btn" class="hidden md:flex items-center gap-2 pl-1 pr-3 py-1 rounded-full btn-ghost focus-ring">
+            <span id="auth-avatar" class="w-8 h-8 rounded-full bg-violet-soft text-violet flex items-center justify-center font-semibold text-sm">?</span>
+            <span id="auth-label" class="text-sm font-medium">Sign in</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Views -->
+    <main class="app-scroll flex-1 px-3 md:px-5 py-4 pb-24 md:pb-5 w-full">
+
+      <!-- HOME / DASHBOARD -->
+      <section id="view-home" class="view space-y-8"></section>
+
+      <!-- TEXT TO ISL -->
+      <section id="view-text2isl" class="view space-y-6"></section>
+
+      <!-- VOICE TO ISL -->
+      <section id="view-voice2isl" class="view space-y-6"></section>
+
+      <!-- ISL TO TEXT/VOICE -->
+      <section id="view-isl2text" class="view space-y-6"></section>
+
+      <!-- LEARN -->
+      <section id="view-learn" class="view space-y-6"></section>
+
+      <!-- QUIZ -->
+      <section id="view-quiz" class="view space-y-6"></section>
+
+      <!-- PROFILE -->
+      <section id="view-profile" class="view space-y-6"></section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Mobile bottom nav -->
+<nav id="mobile-nav" class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-surface border-t border-token px-2 py-2 flex justify-between"></nav>
+
+<!-- Auth modal -->
+<div id="auth-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop px-4">
+  <div class="card w-full max-w-sm p-6 relative">
+    <button id="auth-close" aria-label="Close" class="absolute top-3 right-3 w-8 h-8 rounded-lg btn-ghost flex items-center justify-center focus-ring">✕</button>
+    <p class="font-display font-bold text-2xl mb-1" id="auth-title">Sign in</p>
+    <p class="text-sm text-muted mb-5">Track your lessons, quiz scores, and conversations across visits.</p>
+    <form id="auth-form" class="space-y-3">
+      <div id="auth-name-wrap" class="hidden">
+        <label class="text-xs font-medium text-muted" for="auth-name">Full name</label>
+        <input id="auth-name" type="text" class="w-full rounded-lg px-3 py-2 mt-1 text-sm focus-ring" placeholder="Ananya Rao">
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted" for="auth-email">Email</label>
+        <input id="auth-email" type="email" required class="w-full rounded-lg px-3 py-2 mt-1 text-sm focus-ring" placeholder="you@example.com">
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted" for="auth-password">Password</label>
+        <input id="auth-password" type="password" required minlength="4" class="w-full rounded-lg px-3 py-2 mt-1 text-sm focus-ring" placeholder="••••••••">
+      </div>
+      <button type="submit" class="w-full py-2.5 rounded-lg btn-primary font-semibold text-sm focus-ring">Continue</button>
+    </form>
+    <button id="auth-switch" class="text-xs text-teal font-medium mt-4 focus-ring">Don't have an account? Sign up</button>
+    <p class="text-[11px] text-muted mt-4 leading-relaxed">Demo account — stored only for this prototype, no real credentials required.</p>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 hidden">
+  <div class="card px-4 py-2.5 shadow-token text-sm font-medium" id="toast-text"></div>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/avatar.js"></script>
+<script>
+/* ======================================================================
+   SIGNBRIDGE AI — PROTOTYPE APPLICATION
+   Front-end interaction prototype. AI/ML recognition, Bhashini API calls,
+   and the 3D avatar renderer are simulated with clearly-labeled mock
+   logic so the full user journey can be demonstrated end-to-end without
+   live backend services. Swap the SIM_* functions for real API/model
+   calls when wiring this up to production services.
+====================================================================== */
+
+/* ---------- i18n: interface strings ---------- */
+const LANGS = [
+  {code:'en', label:'English'}, {code:'hi', label:'हिन्दी'}, {code:'ta', label:'தமிழ்'},
+  {code:'te', label:'తెలుగు'}, {code:'kn', label:'ಕನ್ನಡ'}, {code:'ml', label:'മലയാളം'},
+  {code:'bn', label:'বাংলা'}, {code:'mr', label:'मराठी'}, {code:'gu', label:'ગુજરાતી'}, {code:'pa', label:'ਪੰਜਾਬੀ'}
+];
+const STR = {
+  en:{ home:'Home', text2isl:'Text → ISL', voice2isl:'Voice → ISL', isl2text:'ISL → Text/Voice', learn:'Learn ISL', quiz:'Quiz & Games', profile:'Profile',
+       greet:'Welcome back', heroTitle:'One platform. Every voice, every hand.',
+       heroSub:'SignBridge AI turns speech and text into Indian Sign Language, and turns ISL gestures back into words — in the language you already think in.' },
+  hi:{ home:'होम', text2isl:'टेक्स्ट → ISL', voice2isl:'आवाज़ → ISL', isl2text:'ISL → टेक्स्ट/आवाज़', learn:'ISL सीखें', quiz:'क्विज़ और गेम', profile:'प्रोफ़ाइल',
+       greet:'वापसी पर स्वागत है', heroTitle:'एक मंच। हर आवाज़, हर हाथ।',
+       heroSub:'SignBridge AI बोली और टेक्स्ट को भारतीय सांकेतिक भाषा में बदलता है, और ISL इशारों को वापस शब्दों में।' },
+  ta:{ home:'முகப்பு', text2isl:'உரை → ISL', voice2isl:'குரல் → ISL', isl2text:'ISL → உரை/குரல்', learn:'ISL கற்க', quiz:'வினாடி வினா', profile:'சுயவிவரம்',
+       greet:'மீண்டும் வருக', heroTitle:'ஒரு தளம். ஒவ்வொரு குரலும், ஒவ்வொரு கையும்.',
+       heroSub:'SignBridge AI பேச்சு மற்றும் உரையை இந்திய சைகை மொழியாக மாற்றுகிறது.' },
+  te:{ home:'హోమ్', text2isl:'టెక్స్ట్ → ISL', voice2isl:'వాయిస్ → ISL', isl2text:'ISL → టెక్స్ట్/వాయిస్', learn:'ISL నేర్చుకోండి', quiz:'క్విజ్ & గేమ్స్', profile:'ప్రొఫైల్',
+       greet:'తిరిగి స్వాగతం', heroTitle:'ఒక వేదిక. ప్రతి గొంతు, ప్రతి చేయి.',
+       heroSub:'SignBridge AI మాట మరియు వచనాన్ని భారతీయ సంకేత భాషగా మారుస్తుంది.' },
+  kn:{ home:'ಮುಖಪುಟ', text2isl:'ಪಠ್ಯ → ISL', voice2isl:'ಧ್ವನಿ → ISL', isl2text:'ISL → ಪಠ್ಯ/ಧ್ವನಿ', learn:'ISL ಕಲಿಯಿರಿ', quiz:'ರಸಪ್ರಶ್ನೆ', profile:'ಪ್ರೊಫೈಲ್',
+       greet:'ಮತ್ತೆ ಸ್ವಾಗತ', heroTitle:'ಒಂದು ವೇದಿಕೆ. ಪ್ರತಿ ಧ್ವನಿ, ಪ್ರತಿ ಕೈ.',
+       heroSub:'SignBridge AI ಮಾತು ಮತ್ತು ಪಠ್ಯವನ್ನು ಭಾರತೀಯ ಸಂಜ್ಞಾ ಭಾಷೆಗೆ ಪರಿವರ್ತಿಸುತ್ತದೆ.' },
+  ml:{ home:'ഹോം', text2isl:'ടെക്സ്റ്റ് → ISL', voice2isl:'വോയ്സ് → ISL', isl2text:'ISL → ടെക്സ്റ്റ്/വോയ്സ്', learn:'ISL പഠിക്കുക', quiz:'ക്വിസ് & ഗെയിംസ്', profile:'പ്രൊഫൈൽ',
+       greet:'വീണ്ടും സ്വാഗതം', heroTitle:'ഒരു പ്ലാറ്റ്ഫോം. ഓരോ ശബ്ദവും, ഓരോ കയ്യും.',
+       heroSub:'SignBridge AI സംസാരവും ടെക്സ്റ്റും ഇന്ത്യൻ ആംഗ്യഭാഷയിലേക്ക് മാറ്റുന്നു.' },
+  bn:{ home:'হোম', text2isl:'টেক্সট → ISL', voice2isl:'ভয়েস → ISL', isl2text:'ISL → টেক্সট/ভয়েস', learn:'ISL শিখুন', quiz:'কুইজ ও গেমস', profile:'প্রোফাইল',
+       greet:'ফিরে আসার জন্য স্বাগতম', heroTitle:'একটি প্ল্যাটফর্ম। প্রতিটি কণ্ঠ, প্রতিটি হাত।',
+       heroSub:'SignBridge AI কথা ও লেখাকে ভারতীয় সাংকেতিক ভাষায় রূপান্তর করে।' },
+  mr:{ home:'मुख्यपृष्ठ', text2isl:'मजकूर → ISL', voice2isl:'आवाज → ISL', isl2text:'ISL → मजकूर/आवाज', learn:'ISL शिका', quiz:'क्विझ आणि गेम्स', profile:'प्रोफाइल',
+       greet:'परत आल्याबद्दल स्वागत', heroTitle:'एक व्यासपीठ. प्रत्येक आवाज, प्रत्येक हात.',
+       heroSub:'SignBridge AI बोलणे आणि मजकूराचे भारतीय सांकेतिक भाषेत रूपांतर करते.' },
+  gu:{ home:'હોમ', text2isl:'ટેક્સ્ટ → ISL', voice2isl:'અવાજ → ISL', isl2text:'ISL → ટેક્સ્ટ/અવાજ', learn:'ISL શીખો', quiz:'ક્વિઝ અને ગેમ્સ', profile:'પ્રોફાઇલ',
+       greet:'પાછા સ્વાગત છે', heroTitle:'એક પ્લેટફોર્મ. દરેક અવાજ, દરેક હાથ.',
+       heroSub:'SignBridge AI વાણી અને ટેક્સ્ટને ભારતીય સંકેત ભાષામાં રૂપાંતરિત કરે છે.' },
+  pa:{ home:'ਹੋਮ', text2isl:'ਟੈਕਸਟ → ISL', voice2isl:'ਆਵਾਜ਼ → ISL', isl2text:'ISL → ਟੈਕਸਟ/ਆਵਾਜ਼', learn:'ISL ਸਿੱਖੋ', quiz:'ਕੁਇਜ਼ ਅਤੇ ਗੇਮਾਂ', profile:'ਪ੍ਰੋਫਾਈਲ',
+       greet:'ਵਾਪਸ ਆਉਣ ਤੇ ਸੁਆਗਤ', heroTitle:'ਇੱਕ ਪਲੇਟਫਾਰਮ। ਹਰ ਆਵਾਜ਼, ਹਰ ਹੱਥ।',
+       heroSub:'SignBridge AI ਬੋਲੀ ਅਤੇ ਟੈਕਸਟ ਨੂੰ ਭਾਰਤੀ ਸੰਕੇਤਕ ਭਾਸ਼ਾ ਵਿੱਚ ਬਦਲਦਾ ਹੈ।' },
+};
+
+/* ---------- App state ---------- */
+const APP_VERSION = '2.0';
+const state = {
+  lang: 'en',
+  theme: 'light',
+  view: 'home',
+  user: null, // {name, email}
+  authMode: 'signin',
+  progress: { streak:0, xp:0, dailyGoal:30, dailyXP:0, lessonsDone:[], lessonAttempts:{}, quizHigh:0, favorites:[], lastQuizScores:[], convoHistory:[], savedPhrases:[], langsUsed:[] },
+  camera: { stream:null, running:false },
+  voice: { recognition:null, listening:false },
+  settings: { autoSpeak:false, slowSigns:false, highContrast:false },
+  learn: { activeLessonId:'b1', stage:'demo', promptIndex:0, feedback:null }
+};
+
+const NAV_ITEMS = [
+  {id:'home', icon:'🏠'}, {id:'text2isl', icon:'⌨️'}, {id:'voice2isl', icon:'🎙️'},
+  {id:'isl2text', icon:'🤟'}, {id:'learn', icon:'🎓'}, {id:'quiz', icon:'🏆'}, {id:'profile', icon:'👤'}
+];
+
+/* ---------- Storage helpers (persistent artifact storage w/ graceful fallback) ---------- */
+async function saveProgress(){
+  try{
+    if(window.storage) await window.storage.set('signbridge:progress', JSON.stringify(state.progress));
+    else localStorage.setItem('signbridge:progress', JSON.stringify(state.progress));
+  }catch(e){
+    try{ localStorage.setItem('signbridge:progress', JSON.stringify(state.progress)); }catch(_){}
+  }
+}
+async function loadProgress(){
+  try{
+    const r = window.storage ? await window.storage.get('signbridge:progress') : null;
+    const raw = r && r.value ? r.value : localStorage.getItem('signbridge:progress');
+    if(raw) state.progress = Object.assign(state.progress, JSON.parse(raw));
+  }catch(e){
+    try{
+      const raw = localStorage.getItem('signbridge:progress');
+      if(raw) state.progress = Object.assign(state.progress, JSON.parse(raw));
+    }catch(_){}
+  }
+}
+async function saveUser(){
+  try{
+    if(window.storage) await window.storage.set('signbridge:user', JSON.stringify(state.user));
+    else localStorage.setItem('signbridge:user', JSON.stringify(state.user));
+  }catch(e){ try{ localStorage.setItem('signbridge:user', JSON.stringify(state.user)); }catch(_){} }
+}
+async function loadUser(){
+  try{
+    const r = window.storage ? await window.storage.get('signbridge:user') : null;
+    const raw = r && r.value ? r.value : localStorage.getItem('signbridge:user');
+    if(raw) state.user = JSON.parse(raw);
+  }catch(e){
+    try{
+      const raw = localStorage.getItem('signbridge:user');
+      if(raw) state.user = JSON.parse(raw);
+    }catch(_){}
+  }
+}
+async function saveSettings(){
+  try{
+    if(window.storage) await window.storage.set('signbridge:settings', JSON.stringify(state.settings));
+    else localStorage.setItem('signbridge:settings', JSON.stringify(state.settings));
+  }catch(e){ try{ localStorage.setItem('signbridge:settings', JSON.stringify(state.settings)); }catch(_){} }
+}
+async function loadSettings(){
+  try{
+    const r = window.storage ? await window.storage.get('signbridge:settings') : null;
+    const raw = r && r.value ? r.value : localStorage.getItem('signbridge:settings');
+    if(raw) state.settings = Object.assign(state.settings, JSON.parse(raw));
+  }catch(e){}
+}
+
+/* ---------- Toast ---------- */
+let toastTimer;
+function toast(msg){
+  const el = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.add('hidden'), 2600);
+}
+
+/* ---------- Sign glyph generator ----------
+   Procedurally generates a small abstract "hand shape" glyph per character.
+   This stands in for a certified 3D-avatar / video sign library in the
+   prototype: shape (finger count, spread, rotation) is deterministically
+   derived from the character code so the same letter always renders the
+   same glyph, giving a consistent visual "alphabet" for the demo. */
+function glyphSVG(ch, opts={}){
+  const size = opts.size || 64;
+  const color = opts.color || 'var(--teal)';
+  const c = (ch||' ').toUpperCase();
+  const code = c.charCodeAt(0) || 32;
+  if(c === ' '){
+    return `<svg width="${size}" height="${size}" viewBox="0 0 64 64"><circle cx="32" cy="32" r="3" fill="var(--border)"/></svg>`;
+  }
+  const isDigit = /[0-9]/.test(c);
+  const fingers = isDigit ? (Number(c)===0?5:Number(c)) : 3 + (code % 4);
+  const rot = (code * 17) % 40 - 20;
+  const spread = 26 + (code % 26);
+  const palmR = size*0.20;
+  const cx = size/2, cy = size/2 + size*0.10;
+  let fingerEls = '';
+  const n = Math.max(1, Math.min(5, fingers));
+  for(let i=0;i<n;i++){
+    const t = n===1 ? 0 : (i/(n-1) - 0.5);
+    const angle = (-90 + rot + t*spread) * Math.PI/180;
+    const len = size*0.34 + (((code*(i+3)) % 10) - 5)*0.02*size;
+    const x2 = cx + Math.cos(angle)*len;
+    const y2 = cy + Math.sin(angle)*len;
+    fingerEls += `<line x1="${cx}" y1="${cy}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${color}" stroke-width="${size*0.075}" stroke-linecap="round"/>`;
+  }
+  const thumbAngle = (150 + (code%20)-10) * Math.PI/180;
+  const tx = cx + Math.cos(thumbAngle)*size*0.24, ty = cy + Math.sin(thumbAngle)*size*0.24;
+  fingerEls += `<line x1="${cx}" y1="${cy}" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="${color}" stroke-width="${size*0.08}" stroke-linecap="round"/>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="sign for ${ch}">
+    ${fingerEls}
+    <circle cx="${cx}" cy="${cy}" r="${palmR}" fill="${color}" opacity="0.16"/>
+    <circle cx="${cx}" cy="${cy}" r="${palmR*0.5}" fill="${color}"/>
+  </svg>`;
+}
+
+function renderSignRail(text, containerEl, colorVar='var(--teal)'){
+  containerEl.innerHTML = '';
+  const chars = text.split('').slice(0, 60);
+  if(!chars.length){
+    containerEl.innerHTML = `<p class="text-sm text-muted italic px-2">Signs will appear here once you enter text.</p>`;
+    return;
+  }
+  chars.forEach((ch, i)=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'sign-glyph flex flex-col items-center gap-1 shrink-0';
+    wrap.style.animationDelay = (i*0.05)+'s';
+    wrap.innerHTML = `<div class="w-14 h-14 rounded-xl bg-surface-2 flex items-center justify-center">${glyphSVG(ch,{size:44,color:colorVar})}</div>
+      <span class="text-[10px] font-mono text-muted">${ch===' '?'·':ch}</span>`;
+    containerEl.appendChild(wrap);
+  });
+}
+
+/* ---------- Mock data ---------- */
+const LESSON_TRACKS = [
+  { level:'Beginner', color:'teal', lessons:[
+    {id:'b1', title:'ISL Alphabet A–M', mins:12, type:'Alphabet'},
+    {id:'b2', title:'ISL Alphabet N–Z', mins:12, type:'Alphabet'},
+    {id:'b3', title:'Numbers 0–20', mins:10, type:'Numbers'},
+    {id:'b4', title:'Greetings & Introductions', mins:8, type:'Words'},
+  ]},
+  { level:'Intermediate', color:'amber', lessons:[
+    {id:'i1', title:'Family & Relationships', mins:14, type:'Words'},
+    {id:'i2', title:'Daily Routine Phrases', mins:16, type:'Conversation'},
+    {id:'i3', title:'Shopping & Money', mins:15, type:'Conversation'},
+    {id:'i4', title:'Directions & Places', mins:13, type:'Conversation'},
+  ]},
+  { level:'Advanced', color:'violet', lessons:[
+    {id:'a1', title:'Emergency Communication', mins:18, type:'Emergency'},
+    {id:'a2', title:'Medical Conversations', mins:20, type:'Emergency'},
+    {id:'a3', title:'Workplace & Interviews', mins:22, type:'Conversation'},
+    {id:'a4', title:'Storytelling in ISL', mins:25, type:'Practice'},
+  ]},
+];
+
+const QUIZ_BANK = [
+  {q:'Which hand shape is used for the ISL letter "V"?', options:['Fist','Two fingers spread','Thumb up','Flat palm'], answer:1},
+  {q:'In ISL numbers, how is "10" typically signed?', options:['Two fists','Thumbs crossed','Closed fist shaken','Open palm'], answer:2},
+  {q:'What does a flat palm moving away from the chest often represent?', options:['Thank you','Stop','Question','Sorry'], answer:0},
+  {q:'Which of these is an emergency sign category?', options:['Colours','Hospital / Help','Weather','Sports'], answer:1},
+  {q:'ISL grammar order is generally closest to:', options:['Subject-Verb-Object', 'Subject-Object-Verb', 'Verb-Subject-Object', 'Object-Verb-Subject'], answer:1},
+  {q:'Facial expression in ISL mainly conveys:', options:['Nothing, it is not used','Grammar and emotion','Only anger','Volume of speech'], answer:1},
+];
+
+const BADGES = [
+  {id:'first_lesson', label:'First Steps', icon:'🌱', desc:'Complete your first lesson'},
+  {id:'streak3', label:'3-Day Streak', icon:'🔥', desc:'Practice 3 days in a row'},
+  {id:'quiz_ace', label:'Quiz Ace', icon:'🎯', desc:'Score 80%+ on a quiz'},
+  {id:'signer', label:'Sign Explorer', icon:'🤟', desc:'Try Text → ISL 5 times'},
+  {id:'polyglot', label:'Polyglot', icon:'🌐', desc:'Use 3 different interface languages'},
+];
+
+const PHRASEBOOK = [
+  {group:'Daily', phrases:['Namaste', 'Thank you', 'Please help me', 'I am learning ISL']},
+  {group:'Travel', phrases:['Where is the bus stop', 'I need directions', 'How much does this cost', 'I am going home']},
+  {group:'Emergency', phrases:['I need a doctor', 'Call my family', 'I am lost', 'This is urgent']},
+  {group:'School', phrases:['Please repeat', 'I understand', 'I have a question', 'Can you write it down']},
+];
+
+const LESSON_PROMPTS = {
+  b1:['A','E','I','M'],
+  b2:['N','R','T','Z'],
+  b3:['1','5','10','20'],
+  b4:['Namaste','Thank you','My name is Ananya','Nice to meet you'],
+  i1:['Mother','Brother','Friend','Family'],
+  i2:['I wake up early','I go to school','I eat lunch','I sleep at night'],
+  i3:['How much','I want this','Pay by cash','Where is the shop'],
+  i4:['Go straight','Turn left','Bus stop','Near hospital'],
+  a1:['I need help','Call ambulance','I am lost','Emergency'],
+  a2:['Doctor','Pain here','Medicine','Hospital'],
+  a3:['Interview','I can work','Meeting today','Please write'],
+  a4:['Yesterday I travelled','I met my friend','The story is funny','Then we went home'],
+};
+
+const GESTURE_SAMPLES = [
+  {text:'Hello', confidence:96, intent:'Greeting', landmarks:[[28,34],[38,28],[48,31],[58,40],[66,52]]},
+  {text:'Thank you', confidence:94, intent:'Gratitude', landmarks:[[32,42],[44,34],[56,36],[64,48],[70,60]]},
+  {text:'Help me please', confidence:89, intent:'Assistance', landmarks:[[25,58],[36,44],[49,35],[61,42],[72,56]]},
+  {text:'My name is Ravi', confidence:86, intent:'Introduction', landmarks:[[30,52],[41,38],[52,30],[63,39],[74,51]]},
+  {text:'Where is the toilet', confidence:83, intent:'Location question', landmarks:[[27,47],[40,35],[53,33],[64,41],[76,54]]},
+];
+
+const Backend = {
+  latency: 180,
+  useRemote: location.protocol.startsWith('http'),
+  async request(route, payload={}){
+    if(this.useRemote){
+      try{
+        const res = await fetch(route, {
+          method: route === '/api/health' ? 'GET' : 'POST',
+          headers:{'Content-Type':'application/json'},
+          body: route === '/api/health' ? undefined : JSON.stringify(payload)
+        });
+        if(res.ok) return await res.json();
+      }catch(e){}
+    }
+    await sleep(this.latency);
+    if(route === '/api/translate/text'){
+      const text = payload.text || '';
+      return { text, islOrder:normalizeToISL(text), confidence:confidenceFor(text), signs:normalizeToISL(text).split('/').map(s=>s.trim()).filter(Boolean) };
+    }
+    if(route === '/api/speech/recognise'){
+      const text = payload.text || '';
+      return { transcript:text, language:payload.lang || state.lang, confidence:confidenceFor(text), islOrder:normalizeToISL(text) };
+    }
+    if(route === '/api/gesture/recognise'){
+      const sample = payload.sample || GESTURE_SAMPLES[Math.floor(Math.random()*GESTURE_SAMPLES.length)];
+      return sample;
+    }
+    if(route === '/api/learn/lessons'){
+      return LESSON_TRACKS.map(track=>({...track, lessons:track.lessons.map(lesson=>({...lesson, prompts:LESSON_PROMPTS[lesson.id]||[]}))}));
+    }
+    if(route === '/api/learn/attempt'){
+      state.progress.lessonAttempts[payload.lessonId] = (state.progress.lessonAttempts[payload.lessonId]||0) + 1;
+      await saveProgress();
+      return { attempts:state.progress.lessonAttempts[payload.lessonId] };
+    }
+    if(route === '/api/progress/save'){
+      await saveProgress();
+      return { ok:true };
+    }
+    return { ok:true };
+  }
+};
+
+/* ============================================================
+   RENDERERS
+============================================================ */
+function t(key){ return (STR[state.lang] && STR[state.lang][key]) || STR.en[key]; }
+
+function setActiveNav(){
+  document.querySelectorAll('.nav-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.view === state.view);
+  });
+}
+
+function switchView(view){
+  state.view = view;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  setActiveNav();
+  window.scrollTo({top:0, behavior:'smooth'});
+  const renderers = {
+    home: renderHome, text2isl: renderText2ISL, voice2isl: renderVoice2ISL,
+    isl2text: renderISL2Text, learn: renderLearn, quiz: renderQuiz, profile: renderProfile
+  };
+  renderers[view] && renderers[view]();
+}
+
+function buildNav(){
+  const items = NAV_ITEMS.map(n => `
+    <button data-view="${n.id}" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-left focus-ring transition-colors" onclick="switchView('${n.id}')">
+      <span>${n.icon}</span><span>${t(n.id)}</span>
+    </button>`).join('');
+  document.getElementById('sidebar-nav').innerHTML = items;
+
+  document.getElementById('mobile-nav').innerHTML = NAV_ITEMS.slice(0,6).map(n=>`
+    <button data-view="${n.id}" class="nav-item flex-1 flex flex-col items-center gap-0.5 py-1 rounded-lg focus-ring text-[10px]" onclick="switchView('${n.id}')">
+      <span class="text-lg leading-none">${n.icon}</span><span>${t(n.id)}</span>
+    </button>`).join('');
+  setActiveNav();
+}
+
+/* ---- HOME / DASHBOARD ---- */
+function renderHome(){
+  const el = document.getElementById('view-home');
+  const p = state.progress;
+  const lessonsTotal = LESSON_TRACKS.reduce((a,tr)=>a+tr.lessons.length,0);
+  const earnedBadges = computeBadges();
+  const goalPct = progressPercent(p.dailyXP||0, p.dailyGoal||30);
+
+  el.innerHTML = `
+    <div class="card p-6 md:p-10 relative overflow-hidden">
+      <div class="relative z-10 max-w-xl">
+        <p class="badge text-teal bg-teal-soft inline-block px-2.5 py-1 rounded-full mb-4">SIGNBRIDGE AI ${APP_VERSION} · ACCESSIBILITY-FIRST</p>
+        <h1 class="font-display font-bold text-3xl md:text-4xl leading-tight mb-3">${t('heroTitle')}</h1>
+        <p class="text-muted mb-6">${t('heroSub')}</p>
+        <div class="flex flex-wrap gap-3">
+          <button onclick="switchView('text2isl')" class="px-5 py-2.5 rounded-lg btn-primary font-semibold text-sm focus-ring">Try Text → ISL</button>
+          <button onclick="switchView('isl2text')" class="px-5 py-2.5 rounded-lg btn-ghost font-semibold text-sm focus-ring">Sign back to me</button>
+        </div>
+      </div>
+      <div class="mt-8 flex gap-2 overflow-x-auto pb-2" id="home-rail" aria-label="Live sign preview"></div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      ${statCard('🔥', p.streak, 'Day streak', 'coral')}
+      ${statCard('⭐', p.xp, 'XP earned', 'amber')}
+      ${statCard('📘', p.lessonsDone.length+'/'+lessonsTotal, 'Lessons done', 'teal')}
+      ${statCard('🏅', earnedBadges.length+'/'+BADGES.length, 'Badges', 'violet')}
+    </div>
+
+    <div class="card p-5">
+      <div class="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+        <div class="md:w-64">
+          <p class="font-display font-semibold text-lg">Daily practice goal</p>
+          <p class="text-sm text-muted">${p.dailyXP||0} of ${p.dailyGoal||30} XP earned today</p>
+        </div>
+        <div class="flex-1">
+          <div class="meter"><span style="width:${goalPct}%"></span></div>
+        </div>
+        <button class="px-4 py-2 rounded-lg btn-ghost text-sm font-semibold focus-ring" onclick="switchView('learn')">Keep practicing</button>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4">
+      ${featureCard('⌨️','Text → ISL','Type in any supported language and watch it sign back.','text2isl')}
+      ${featureCard('🎙️','Voice → ISL','Speak, and SignBridge converts speech to signs in real time.','voice2isl')}
+      ${featureCard('🤟','ISL → Text/Voice','Show signs to your camera; get text and spoken output.','isl2text')}
+    </div>
+
+    <div class="card p-5">
+      <p class="font-display font-semibold text-lg mb-3">Conversion pipeline</p>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        ${pipelineStep('1','Input','Text, speech, or camera gesture')}
+        ${pipelineStep('2','Language layer','Speech recognition and multilingual translation')}
+        ${pipelineStep('3','ISL grammar','Phrase simplification and sign ordering')}
+        ${pipelineStep('4','Output','Glyph preview, voice, history, and export')}
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-4">
+          <p class="font-display font-semibold text-lg">Recent conversations</p>
+          <button class="text-xs text-teal font-medium focus-ring" onclick="switchView('profile')">View all</button>
+        </div>
+        <div class="space-y-3" id="home-recent-convo"></div>
+      </div>
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-4">
+          <p class="font-display font-semibold text-lg">Continue learning</p>
+          <button class="text-xs text-teal font-medium focus-ring" onclick="switchView('learn')">Go to lessons</button>
+        </div>
+        <div class="space-y-2" id="home-continue-learn"></div>
+      </div>
+    </div>
+  `;
+  renderSignRail('NAMASTE', document.getElementById('home-rail'));
+
+  const convoEl = document.getElementById('home-recent-convo');
+  if(!p.convoHistory.length){
+    convoEl.innerHTML = `<p class="text-sm text-muted italic">No conversations yet — try Text → ISL or Voice → ISL.</p>`;
+  }else{
+    convoEl.innerHTML = p.convoHistory.slice(0,4).map(c=>`
+      <div class="flex items-center gap-3 text-sm">
+        <span class="w-8 h-8 rounded-full bg-teal-soft text-teal flex items-center justify-center text-xs shrink-0">${c.mode==='voice'?'🎙️':'⌨️'}</span>
+        <div class="min-w-0">
+          <p class="truncate">${escapeHtml(c.text)}</p>
+          <p class="text-[11px] text-muted">${c.lang.toUpperCase()} · ${c.time}</p>
+        </div>
+      </div>`).join('');
+  }
+
+  const contEl = document.getElementById('home-continue-learn');
+  const nextLesson = LESSON_TRACKS.flatMap(tr=>tr.lessons).find(l=>!p.lessonsDone.includes(l.id));
+  contEl.innerHTML = nextLesson ? `
+    <div class="flex items-center justify-between p-3 rounded-lg bg-surface-2">
+      <div>
+        <p class="text-sm font-medium">${nextLesson.title}</p>
+        <p class="text-[11px] text-muted">${nextLesson.type} · ${nextLesson.mins} min</p>
+      </div>
+      <button class="text-xs px-3 py-1.5 rounded-lg btn-primary font-semibold focus-ring" onclick="switchView('learn')">Start</button>
+    </div>` : `<p class="text-sm text-muted italic">You've completed every lesson — nice work! 🎉</p>`;
+}
+
+function statCard(icon,val,label,color){
+  return `<div class="card p-4">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xl">${icon}</span>
+      <span class="badge text-${color} bg-${color}-soft px-2 py-0.5 rounded-full">LIVE</span>
+    </div>
+    <p class="font-mono font-bold text-2xl">${val}</p>
+    <p class="text-xs text-muted">${label}</p>
+  </div>`;
+}
+function featureCard(icon,title,desc,view){
+  return `<button onclick="switchView('${view}')" class="card p-5 text-left focus-ring hover:-translate-y-0.5 transition-transform">
+    <span class="text-2xl">${icon}</span>
+    <p class="font-display font-semibold text-lg mt-3">${title}</p>
+    <p class="text-sm text-muted mt-1">${desc}</p>
+  </button>`;
+}
+function pipelineStep(num,title,desc){
+  return `<div class="rounded-lg border border-token bg-surface-2 p-3">
+    <span class="badge text-teal">${num.padStart(2,'0')}</span>
+    <p class="font-medium text-sm mt-1">${title}</p>
+    <p class="text-xs text-muted mt-1">${desc}</p>
+  </div>`;
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function jsString(s){ return JSON.stringify(String(s||'')); }
+
+/* ---- TEXT TO ISL ---- */
+let t2iAvatarPlayer = null;
+
+function renderText2ISL(){
+  const el = document.getElementById('view-text2isl');
+  el.innerHTML = `
+    <div>
+      <h1 class="font-display font-bold text-2xl md:text-3xl">Text → Indian Sign Language</h1>
+      <p class="text-muted mt-1">Type a word or sentence in any supported language. SignBridge sequences the signs for you.</p>
+    </div>
+
+    <div class="card p-5 space-y-4">
+      <div class="flex flex-col md:flex-row gap-3">
+        <select id="t2i-lang" class="rounded-lg px-3 py-2 text-sm focus-ring border-token md:w-52"></select>
+        <input id="t2i-input" type="text" placeholder="Type something, e.g. Thank you" class="flex-1 rounded-lg px-3 py-2 text-sm focus-ring">
+        <button id="t2i-go" class="px-5 py-2 rounded-lg btn-primary font-semibold text-sm focus-ring">Convert</button>
+      </div>
+      <div class="flex flex-wrap gap-2" id="t2i-suggestions"></div>
+    </div>
+
+    <div class="grid lg:grid-cols-[1.5fr_.9fr] gap-4">
+    <div class="card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <p class="font-display font-semibold text-lg">Sign sequence</p>
+        <span class="badge text-muted" id="t2i-status">idle</span>
+      </div>
+
+      <div class="grid sm:grid-cols-[220px_1fr] gap-4 items-start">
+        <div id="t2i-avatar-wrap" class="rounded-xl bg-surface-2 overflow-hidden">
+          <svg id="t2iAvatarSvg" viewBox="0 0 720 640" role="img" aria-label="Signing avatar" style="width:100%;height:auto;display:block;">
+            <defs>
+              <linearGradient id="t2iBgGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#e7f5ef"/>
+                <stop offset="0.52" stop-color="#f7efe2"/>
+                <stop offset="1" stop-color="#e9effc"/>
+              </linearGradient>
+              <linearGradient id="t2iShirtGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#26756f"/>
+                <stop offset="1" stop-color="#123d48"/>
+              </linearGradient>
+            </defs>
+            <rect width="720" height="640" fill="url(#t2iBgGrad)"/>
+            <ellipse cx="360" cy="584" rx="202" ry="30" fill="#35545c" opacity="0.12"/>
+            <g id="avatar">
+              <path d="M236 603 C246 455 268 350 360 350 C452 350 474 455 484 603 Z" fill="url(#t2iShirtGrad)"/>
+              <circle cx="360" cy="230" r="86" fill="#bc7b54"/>
+              <path d="M276 217 C286 144 331 103 390 117 C453 132 466 184 444 232 C421 201 382 181 331 185 C308 187 291 197 276 217 Z" fill="#2a2d32"/>
+              <circle cx="328" cy="238" r="6" fill="#232629"/>
+              <circle cx="392" cy="238" r="6" fill="#232629"/>
+              <path d="M331 286 C350 302 374 302 391 286" fill="none" stroke="#603b32" stroke-width="7" stroke-linecap="round"/>
+              <rect x="323" y="309" width="74" height="70" rx="31" fill="#ad704e"/>
+              <g id="leftArm" class="limb" stroke="#bc7b54" stroke-width="26" stroke-linecap="round">
+                <line id="leftUpper" x1="278" y1="386" x2="222" y2="454"/>
+                <line id="leftLower" x1="222" y1="454" x2="194" y2="528"/>
+                <g id="leftHand" class="hand" fill="#ad704e" stroke="#ad704e" stroke-width="7" stroke-linecap="round">
+                  <ellipse cx="194" cy="528" rx="24" ry="28"/>
+                  <line x1="186" y1="504" x2="176" y2="474"/>
+                  <line x1="196" y1="502" x2="196" y2="469"/>
+                  <line x1="207" y1="505" x2="216" y2="477"/>
+                </g>
+              </g>
+              <g id="rightArm" class="limb" stroke="#bc7b54" stroke-width="26" stroke-linecap="round">
+                <line id="rightUpper" x1="442" y1="386" x2="498" y2="454"/>
+                <line id="rightLower" x1="498" y1="454" x2="526" y2="528"/>
+                <g id="rightHand" class="hand" fill="#ad704e" stroke="#ad704e" stroke-width="7" stroke-linecap="round">
+                  <ellipse cx="526" cy="528" rx="24" ry="28"/>
+                  <line x1="514" y1="505" x2="504" y2="476"/>
+                  <line x1="526" y1="501" x2="526" y2="468"/>
+                  <line x1="538" y1="505" x2="548" y2="476"/>
+                </g>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-muted uppercase tracking-wide">Avatar sign</span>
+            <span class="text-xs text-muted" id="t2i-avatar-progress">0 / 0</span>
+          </div>
+          <p class="font-display font-bold text-lg" id="t2i-avatar-sign">—</p>
+          <p class="text-sm text-muted mb-3" id="t2i-avatar-meaning">Type or pick a phrase to animate the avatar.</p>
+          <div id="t2i-sequence-steps" class="flex flex-wrap gap-2"></div>
+          <p class="text-xs text-muted mt-3">Letter cues (fallback for words without an avatar sign):</p>
+          <div id="t2i-rail" class="flex gap-3 overflow-x-auto pb-2 rounded-xl bg-surface-2 p-3 min-h-[70px] mt-1"></div>
+        </div>
+      </div>
+
+      <div class="grid sm:grid-cols-3 gap-3 mt-4">
+        <div class="mono-box"><span class="text-muted">ISL order</span><br><span id="t2i-grammar">waiting</span></div>
+        <div class="mono-box"><span class="text-muted">Confidence</span><br><span id="t2i-confidence">--%</span></div>
+        <div class="mono-box"><span class="text-muted">Signs</span><br><span id="t2i-count">0 units</span></div>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-4">
+        <button id="t2i-copy" class="px-3 py-2 rounded-lg btn-ghost text-xs font-semibold focus-ring" disabled>Copy ISL order</button>
+        <button id="t2i-save" class="px-3 py-2 rounded-lg btn-ghost text-xs font-semibold focus-ring" disabled>Save phrase</button>
+      </div>
+      <p class="text-xs text-muted mt-4 leading-relaxed">
+        Prototype note: the avatar plays keyframed poses from a small built-in sign library (Hello, Thank you, Please, Yes,
+        No, Help, Emergency, Doctor, Call, Sorry, Namaste, Water, I love you, I understand, Family, Question). Words outside
+        that library fall back to the letter-glyph cues below. Production SignBridge would use a certified 3D-avatar or video
+        sign library reviewed by ISL interpreters, with correct ISL grammar and non-manual markers (facial expression, mouth
+        patterns).
+      </p>
+    </div>
+    <div class="card p-5">
+      <p class="font-display font-semibold mb-3">Phrasebook</p>
+      <div class="space-y-4">
+        ${PHRASEBOOK.map(group=>`
+          <div>
+            <p class="badge text-muted mb-2">${group.group.toUpperCase()}</p>
+            <div class="flex flex-wrap gap-2">
+              ${group.phrases.map(phrase=>`<button class="text-xs px-3 py-1.5 rounded-full bg-surface-2 hover:bg-teal-soft hover:text-teal focus-ring" onclick="document.getElementById('t2i-input').value='${phrase}'; runText2ISL();">${phrase}</button>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+    </div>
+  `;
+  fillSelect('t2i-lang');
+  renderSignRail('', document.getElementById('t2i-rail'));
+  document.getElementById('t2i-suggestions').innerHTML = ['Thank you','Namaste','Help','Water','I love you','Emergency']
+    .map(w=>`<button class="text-xs px-3 py-1.5 rounded-full bg-surface-2 hover:bg-teal-soft hover:text-teal focus-ring" onclick="document.getElementById('t2i-input').value='${w}'">${w}</button>`).join('');
+
+  document.getElementById('t2i-go').onclick = ()=> runText2ISL();
+  document.getElementById('t2i-copy').onclick = ()=> copyText(document.getElementById('t2i-grammar').textContent);
+  document.getElementById('t2i-save').onclick = ()=> savePhrase(document.getElementById('t2i-input').value);
+  document.getElementById('t2i-input').addEventListener('keydown', e=>{ if(e.key==='Enter') runText2ISL(); });
+
+  /* Wire up the sign-avatar engine (js/db.js + js/avatar.js) to this view's SVG.
+     The SVG is rebuilt every time this view renders, so the player is re-created here. */
+  t2iAvatarPlayer = new SignAvatar.AvatarPlayer(SignDB, {
+    onFrame: ({ signName, meaning, sequenceIndex, sequenceTotal }) => {
+      const signEl = document.getElementById('t2i-avatar-sign');
+      const meaningEl = document.getElementById('t2i-avatar-meaning');
+      const progressEl = document.getElementById('t2i-avatar-progress');
+      const steps = document.getElementById('t2i-sequence-steps');
+      if(!signEl) return;
+      signEl.textContent = signName.replace('_',' ');
+      meaningEl.textContent = meaning;
+      progressEl.textContent = `${sequenceIndex+1} / ${sequenceTotal}`;
+      [...steps.children].forEach((chip,i)=> chip.classList.toggle('bg-teal-soft', i===sequenceIndex));
+    }
+  });
+  renderAvatarSequenceChips(['HELLO']);
+}
+
+/* Renders the small chip row above the avatar showing every sign in the current sequence. */
+function renderAvatarSequenceChips(signNames){
+  const steps = document.getElementById('t2i-sequence-steps');
+  if(!steps) return;
+  steps.innerHTML = signNames.map((name,i)=>
+    `<span class="text-xs px-3 py-1.5 rounded-full bg-surface-2 font-semibold${i===0?' bg-teal-soft':''}">${name.replace('_',' ')}</span>`
+  ).join('');
+}
+
+async function runText2ISL(){
+  const input = document.getElementById('t2i-input').value.trim();
+  const lang = document.getElementById('t2i-lang').value;
+  const status = document.getElementById('t2i-status');
+  const rail = document.getElementById('t2i-rail');
+  if(!input){ toast('Type something first'); return; }
+  status.textContent = 'translating…';
+  rail.classList.add('rail-active');
+  await sleep(500);
+  status.textContent = 'grammar pass…';
+  const result = await Backend.request('/api/translate/text', {text:input, lang});
+  const islOrder = result.islOrder;
+  document.getElementById('t2i-grammar').textContent = islOrder;
+  document.getElementById('t2i-confidence').textContent = result.confidence+'%';
+  document.getElementById('t2i-count').textContent = result.signs.length+' units';
+  await sleep(250);
+  status.textContent = 'signing…';
+  const clean = input.toUpperCase().replace(/[^A-Z0-9 ]/g,'');
+
+  /* Drive the avatar off the same input. If a phrase in SignDB matches, play its
+     keyframed sign sequence; otherwise fall back to the per-letter glyph rail only. */
+  const matched = SignDB.findPhrase(input, { strict: true });
+  if(matched && t2iAvatarPlayer){
+    renderAvatarSequenceChips(matched.signs);
+    t2iAvatarPlayer.loadSequence(matched.signs);
+    t2iAvatarPlayer.play();
+    renderSignRail('', rail);
+    document.getElementById('t2i-avatar-meaning').textContent = `Matched phrase: "${matched.label}"`;
+  } else {
+    if(t2iAvatarPlayer) t2iAvatarPlayer.pause();
+    renderAvatarSequenceChips([]);
+    const signEl = document.getElementById('t2i-avatar-sign');
+    const meaningEl = document.getElementById('t2i-avatar-meaning');
+    if(signEl){
+      signEl.textContent = '—';
+      meaningEl.textContent = 'No avatar sign for this input yet — showing letter cues instead.';
+    }
+    renderSignRail(islOrder.replace(/\//g,' ') || clean || input, rail);
+  }
+
+  await sleep(500);
+  rail.classList.remove('rail-active');
+  status.textContent = 'done';
+  document.getElementById('t2i-copy').disabled = false;
+  document.getElementById('t2i-save').disabled = false;
+  logConversation('text', input, lang);
+  bumpXP(5);
+}
+
+/* ---- VOICE TO ISL ---- */
+function renderVoice2ISL(){
+  const el = document.getElementById('view-voice2isl');
+  el.innerHTML = `
+    <div>
+      <h1 class="font-display font-bold text-2xl md:text-3xl">Voice → Indian Sign Language</h1>
+      <p class="text-muted mt-1">Speak naturally. Speech is recognised, translated if needed, then signed back.</p>
+    </div>
+
+    <div class="card p-6 flex flex-col items-center text-center gap-4">
+      <select id="v2i-lang" class="rounded-lg px-3 py-2 text-sm focus-ring border-token"></select>
+      <button id="v2i-mic" class="w-20 h-20 rounded-full btn-primary flex items-center justify-center text-3xl focus-ring floaty">🎙️</button>
+      <p class="text-sm text-muted" id="v2i-status">Tap the mic and speak, or use "Simulate speech" below.</p>
+      <button id="v2i-simulate" class="text-xs px-3 py-1.5 rounded-full bg-surface-2 focus-ring">Simulate speech (no mic needed)</button>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="card p-5">
+        <p class="font-display font-semibold mb-2">Recognised speech</p>
+        <p class="text-sm min-h-[48px]" id="v2i-transcript"><span class="text-muted italic">Nothing yet</span></p>
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div class="mono-box"><span class="text-muted">Language</span><br><span id="v2i-language">--</span></div>
+          <div class="mono-box"><span class="text-muted">Confidence</span><br><span id="v2i-confidence">--%</span></div>
+        </div>
+      </div>
+      <div class="card p-5">
+        <p class="font-display font-semibold mb-2">Sign output</p>
+        <div id="v2i-rail" class="flex gap-3 overflow-x-auto pb-1 rounded-xl bg-surface-2 p-3 min-h-[90px]"></div>
+        <p class="text-xs text-muted mt-3" id="v2i-grammar">ISL order will appear after recognition.</p>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <p class="font-display font-semibold mb-3">Live processing trace</p>
+      <div class="grid sm:grid-cols-3 gap-3" id="v2i-trace">
+        ${pipelineStep('1','Listening','Waiting for audio')}
+        ${pipelineStep('2','Transcribing','No transcript yet')}
+        ${pipelineStep('3','Signing','No sign sequence yet')}
+      </div>
+    </div>
+  `;
+  fillSelect('v2i-lang');
+  renderSignRail('', document.getElementById('v2i-rail'));
+
+  document.getElementById('v2i-simulate').onclick = ()=>{
+    const samples = ['Where is the hospital', 'Thank you very much', 'I need help', 'Nice to meet you'];
+    const s = samples[Math.floor(Math.random()*samples.length)];
+    handleVoiceResult(s);
+  };
+
+  document.getElementById('v2i-mic').onclick = ()=> toggleMic();
+}
+
+function toggleMic(){
+  const btn = document.getElementById('v2i-mic');
+  const status = document.getElementById('v2i-status');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    toast('Mic input unsupported here — try "Simulate speech" instead');
+    return;
+  }
+  if(state.voice.listening){
+    state.voice.recognition && state.voice.recognition.stop();
+    return;
+  }
+  try{
+    const rec = new SR();
+    rec.lang = state.lang === 'en' ? 'en-IN' : state.lang;
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.onstart = ()=>{ state.voice.listening = true; btn.classList.add('rail-active'); status.textContent = 'Listening…'; };
+    rec.onerror = (e)=>{ status.textContent = 'Mic error — try "Simulate speech" instead.'; state.voice.listening = false; btn.classList.remove('rail-active'); };
+    rec.onend = ()=>{ state.voice.listening = false; btn.classList.remove('rail-active'); };
+    rec.onresult = (e)=>{
+      const text = e.results[0][0].transcript;
+      handleVoiceResult(text);
+    };
+    state.voice.recognition = rec;
+    rec.start();
+  }catch(err){
+    toast('Mic unavailable in this environment — try "Simulate speech"');
+  }
+}
+
+async function handleVoiceResult(text){
+  document.getElementById('v2i-transcript').textContent = text;
+  const rail = document.getElementById('v2i-rail');
+  const lang = document.getElementById('v2i-lang').value;
+  const result = await Backend.request('/api/speech/recognise', {text, lang});
+  document.getElementById('v2i-status').textContent = 'Converting to sign…';
+  document.getElementById('v2i-language').textContent = result.language.toUpperCase();
+  document.getElementById('v2i-confidence').textContent = result.confidence+'%';
+  document.getElementById('v2i-trace').innerHTML = `
+    ${pipelineStep('1','Listening','Audio captured')}
+    ${pipelineStep('2','Transcribing',escapeHtml(text))}
+    ${pipelineStep('3','Signing','Preparing ISL sequence')}`;
+  rail.classList.add('rail-active');
+  await sleep(500);
+  const islOrder = result.islOrder;
+  document.getElementById('v2i-grammar').textContent = 'ISL order: '+islOrder;
+  renderSignRail(islOrder.replace(/\//g,' '), rail);
+  rail.classList.remove('rail-active');
+  document.getElementById('v2i-trace').innerHTML = `
+    ${pipelineStep('1','Listening','Audio captured')}
+    ${pipelineStep('2','Transcribing',escapeHtml(text))}
+    ${pipelineStep('3','Signing','Sequence ready')}`;
+  document.getElementById('v2i-status').textContent = 'Done — tap the mic to try again.';
+  logConversation('voice', text, lang);
+  bumpXP(8);
+}
+
+/* ---- ISL TO TEXT / VOICE ---- */
+function renderISL2Text(){
+  const el = document.getElementById('view-isl2text');
+  el.innerHTML = `
+    <div>
+      <h1 class="font-display font-bold text-2xl md:text-3xl">ISL → Text & Voice</h1>
+      <p class="text-muted mt-1">Show signs to your camera. SignBridge recognises gestures and reads them aloud.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="card p-5">
+        <div class="aspect-video rounded-xl bg-surface-2 overflow-hidden relative flex items-center justify-center">
+          <video id="isl-video" class="w-full h-full object-cover hidden" autoplay muted playsinline></video>
+          <div id="isl-landmarks" class="absolute inset-0 pointer-events-none hidden"></div>
+          <div id="isl-video-placeholder" class="text-center px-6">
+            <p class="text-3xl mb-2">📷</p>
+            <p class="text-sm text-muted">Camera preview appears here once started.</p>
+          </div>
+          <div id="isl-rec-dot" class="hidden absolute top-3 left-3 flex items-center gap-1.5 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-red-500 pulse-dot"></span> Recognising
+          </div>
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button id="isl-cam-start" class="flex-1 py-2 rounded-lg btn-primary font-semibold text-sm focus-ring">Start camera</button>
+          <button id="isl-cam-stop" class="flex-1 py-2 rounded-lg btn-ghost font-semibold text-sm focus-ring" disabled>Stop</button>
+        </div>
+        <button id="isl-simulate" class="text-xs px-3 py-1.5 rounded-full bg-surface-2 focus-ring mt-3">Simulate a recognised sign (no camera needed)</button>
+      </div>
+
+      <div class="card p-5 flex flex-col">
+        <p class="font-display font-semibold mb-2">Recognised text</p>
+        <div class="flex-1 rounded-xl bg-surface-2 p-4 text-lg min-h-[140px]" id="isl-output"><span class="text-muted italic text-sm">Waiting for a sign…</span></div>
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div class="mono-box"><span class="text-muted">Intent</span><br><span id="isl-intent">--</span></div>
+          <div class="mono-box"><span class="text-muted">Confidence</span><br><span id="isl-confidence">--%</span></div>
+        </div>
+        <div class="flex items-center gap-2 mt-4">
+          <select id="isl-out-lang" class="rounded-lg px-2 py-2 text-sm focus-ring border-token"></select>
+          <button id="isl-speak" class="px-4 py-2 rounded-lg btn-primary text-sm font-semibold focus-ring">🔊 Speak</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-4">
+      <p class="text-xs text-muted leading-relaxed">
+        Prototype note: real-time gesture recognition in production uses MediaPipe Hands / Pose landmarks fed into a
+        TensorFlow classifier trained on ISL gesture data, run through OpenCV pre-processing. This demo streams your
+        camera locally (nothing leaves your device) and simulates classifier output, since a trained ISL model isn't
+        bundled in this environment.
+      </p>
+    </div>
+  `;
+  fillSelect('isl-out-lang');
+
+  document.getElementById('isl-cam-start').onclick = startCamera;
+  document.getElementById('isl-cam-stop').onclick = stopCamera;
+  document.getElementById('isl-simulate').onclick = simulateGesture;
+  document.getElementById('isl-speak').onclick = speakOutput;
+}
+
+async function startCamera(){
+  const video = document.getElementById('isl-video');
+  const placeholder = document.getElementById('isl-video-placeholder');
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({video:true});
+    state.camera.stream = stream;
+    video.srcObject = stream;
+    video.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+    document.getElementById('isl-rec-dot').classList.remove('hidden');
+    document.getElementById('isl-cam-start').disabled = true;
+    document.getElementById('isl-cam-stop').disabled = false;
+    state.camera.running = true;
+    toast('Camera started — try "Simulate a recognised sign" to preview output');
+  }catch(err){
+    toast('Camera unavailable here — use "Simulate a recognised sign" instead');
+  }
+}
+function stopCamera(){
+  if(state.camera.stream){ state.camera.stream.getTracks().forEach(tr=>tr.stop()); }
+  state.camera.stream = null; state.camera.running = false;
+  document.getElementById('isl-video').classList.add('hidden');
+  document.getElementById('isl-landmarks').classList.add('hidden');
+  document.getElementById('isl-video-placeholder').classList.remove('hidden');
+  document.getElementById('isl-rec-dot').classList.add('hidden');
+  document.getElementById('isl-cam-start').disabled = false;
+  document.getElementById('isl-cam-stop').disabled = true;
+}
+async function simulateGesture(){
+  const sample = await Backend.request('/api/gesture/recognise');
+  const s = sample.text;
+  const out = document.getElementById('isl-output');
+  out.innerHTML = `<span class="text-muted text-sm">Recognising…</span>`;
+  renderLandmarks(sample.landmarks);
+  await sleep(600);
+  out.innerHTML = `<p>${s}</p>`;
+  document.getElementById('isl-intent').textContent = sample.intent;
+  document.getElementById('isl-confidence').textContent = sample.confidence+'%';
+  logConversation('sign', s, document.getElementById('isl-out-lang').value);
+  bumpXP(6);
+  if(state.settings.autoSpeak) speakOutput();
+}
+function renderLandmarks(points){
+  const el = document.getElementById('isl-landmarks');
+  el.classList.remove('hidden');
+  el.innerHTML = points.map(([x,y])=>`<span class="landmark-dot" style="left:${x}%;top:${y}%"></span>`).join('');
+}
+function speakOutput(){
+  const out = document.getElementById('isl-output').textContent.trim();
+  if(!out || out.includes('Waiting')){ toast('Nothing to speak yet'); return; }
+  try{
+    const u = new SpeechSynthesisUtterance(out);
+    const langMap = {en:'en-IN',hi:'hi-IN',ta:'ta-IN',te:'te-IN',kn:'kn-IN',ml:'ml-IN',bn:'bn-IN',mr:'mr-IN',gu:'gu-IN',pa:'pa-IN'};
+    u.lang = langMap[document.getElementById('isl-out-lang').value] || 'en-IN';
+    speechSynthesis.speak(u);
+  }catch(e){ toast('Speech playback unavailable in this environment'); }
+}
+
+/* ---- LEARN ---- */
+function renderLearn(){
+  const el = document.getElementById('view-learn');
+  const p = state.progress;
+  const lessons = LESSON_TRACKS.flatMap(tr=>tr.lessons.map(l=>({...l, level:tr.level, color:tr.color})));
+  const active = lessons.find(l=>l.id===state.learn.activeLessonId) || lessons[0];
+  state.learn.activeLessonId = active.id;
+  const prompts = LESSON_PROMPTS[active.id] || [active.title];
+  const currentPrompt = prompts[state.learn.promptIndex % prompts.length];
+  const doneCount = p.lessonsDone.length;
+  const totalCount = lessons.length;
+  el.innerHTML = `
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-3">
+      <div>
+        <h1 class="font-display font-bold text-2xl md:text-3xl">${t('learn')}</h1>
+        <p class="text-muted mt-1">Next-stage guided learning with demo, practice, and feedback.</p>
+      </div>
+      <div class="md:w-72">
+        <div class="flex justify-between text-xs text-muted mb-1"><span>Course progress</span><span>${doneCount}/${totalCount}</span></div>
+        <div class="meter"><span style="width:${progressPercent(doneCount,totalCount)}%"></span></div>
+      </div>
+    </div>
+
+    <div class="grid xl:grid-cols-[320px_1fr] gap-4">
+      <div class="card p-4">
+        <div class="flex items-center justify-between mb-3">
+          <p class="font-display font-semibold">Lesson path</p>
+          <span class="badge text-muted">${Backend.latency}MS API</span>
+        </div>
+        <div class="space-y-4 max-h-[calc(100vh-230px)] overflow-y-auto pr-1" id="lesson-tracks"></div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="card p-5 lesson-stage">
+          <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-4">
+            <div>
+              <span class="badge text-${active.color} bg-${active.color}-soft px-2.5 py-1 rounded-full">${active.level.toUpperCase()} · ${active.type.toUpperCase()}</span>
+              <h2 class="font-display font-bold text-2xl mt-3">${active.title}</h2>
+              <p class="text-sm text-muted mt-1">${active.mins} min · ${p.lessonAttempts[active.id]||0} practice attempts</p>
+            </div>
+            <div class="flex rounded-lg border border-token overflow-hidden shrink-0">
+              ${['demo','practice','check'].map(stage=>`<button class="seg-btn px-3 py-2 text-xs font-semibold border-r border-token last:border-r-0 ${state.learn.stage===stage?'active':''}" onclick="setLearnStage('${stage}')">${stage.toUpperCase()}</button>`).join('')}
+            </div>
+          </div>
+          <div id="learn-stage-panel"></div>
+        </div>
+
+        <div class="card p-5">
+          <p class="font-display font-semibold mb-3">Alphabet quick-practice</p>
+          <div id="alpha-grid" class="grid grid-cols-8 sm:grid-cols-13 lg:grid-cols-[repeat(26,minmax(0,1fr))] gap-2"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  const grid = document.getElementById('alpha-grid');
+  grid.innerHTML = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(ch=>`
+    <button class="card p-2 flex flex-col items-center gap-1 focus-ring hover:-translate-y-0.5 transition-transform" onclick="selectPracticePrompt('${ch}')">
+      ${glyphSVG(ch,{size:30,color:'var(--teal)'})}
+      <span class="text-[10px] font-mono">${ch}</span>
+    </button>`).join('');
+
+  const tracksEl = document.getElementById('lesson-tracks');
+  tracksEl.innerHTML = LESSON_TRACKS.map(tr=>`
+    <div>
+      <div class="flex items-center gap-2 mb-3">
+        <span class="badge text-${tr.color} bg-${tr.color}-soft px-2.5 py-1 rounded-full">${tr.level.toUpperCase()}</span>
+        <span class="text-xs text-muted">${tr.lessons.filter(l=>p.lessonsDone.includes(l.id)).length}/${tr.lessons.length} complete</span>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-3">
+        ${tr.lessons.map(l=>{
+          const done = p.lessonsDone.includes(l.id);
+          const fav = p.favorites.includes(l.id);
+          const activeClass = l.id===state.learn.activeLessonId ? 'ring-2 ring-[var(--teal)]' : '';
+          return `<div class="card p-3 flex items-center justify-between gap-3 ${activeClass}">
+            <div class="min-w-0">
+              <p class="font-medium text-sm truncate">${l.title}</p>
+              <p class="text-[11px] text-muted">${l.type} · ${l.mins} min · ${p.lessonAttempts[l.id]||0} tries</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button aria-label="Favorite" class="w-8 h-8 rounded-lg btn-ghost focus-ring ${fav?'text-coral':''}" onclick="toggleFavorite('${l.id}')">${fav?'♥':'♡'}</button>
+              <button class="px-3 py-1.5 rounded-lg ${done?'btn-ghost':'btn-primary'} text-xs font-semibold focus-ring" onclick="openLesson('${l.id}')">${done?'Review':'Start'}</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+  renderLearnStage(active, currentPrompt);
+}
+
+function renderLearnStage(lesson, prompt){
+  const panel = document.getElementById('learn-stage-panel');
+  const prompts = LESSON_PROMPTS[lesson.id] || [lesson.title];
+  if(state.learn.stage === 'demo'){
+    panel.innerHTML = `
+      <div class="grid lg:grid-cols-[1fr_280px] gap-4">
+        <div class="rounded-xl bg-surface-2 p-4 min-h-[190px] flex items-center gap-3 overflow-x-auto" id="learn-demo-rail"></div>
+        <div class="space-y-3">
+          <div class="mono-box"><span class="text-muted">Target</span><br>${escapeHtml(prompt)}</div>
+          <div class="mono-box"><span class="text-muted">ISL order</span><br>${normalizeToISL(prompt)}</div>
+          <button class="w-full py-2 rounded-lg btn-primary text-sm font-semibold focus-ring" onclick="setLearnStage('practice')">Practice this</button>
+        </div>
+      </div>`;
+    renderSignRail(normalizeToISL(prompt).replace(/\//g,' '), document.getElementById('learn-demo-rail'));
+    return;
+  }
+  if(state.learn.stage === 'practice'){
+    panel.innerHTML = `
+      <div class="grid lg:grid-cols-[1fr_320px] gap-4">
+        <div class="rounded-xl bg-surface-2 p-5">
+          <p class="text-sm text-muted mb-3">Type the phrase or letter shown by the sign sequence.</p>
+          <div class="flex gap-3 overflow-x-auto pb-2 mb-4" id="learn-practice-rail"></div>
+          <input id="learn-answer" type="text" class="w-full rounded-lg px-3 py-2 text-sm focus-ring" placeholder="Your answer">
+          <div class="flex gap-2 mt-3">
+            <button class="px-4 py-2 rounded-lg btn-primary text-sm font-semibold focus-ring" onclick="checkLessonAnswer()">Check answer</button>
+            <button class="px-4 py-2 rounded-lg btn-ghost text-sm font-semibold focus-ring" onclick="nextLessonPrompt()">Next prompt</button>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="mono-box"><span class="text-muted">Prompt</span><br>${state.learn.promptIndex+1} / ${prompts.length}</div>
+          <div class="mono-box"><span class="text-muted">Backend route</span><br>/api/learn/attempt</div>
+          ${state.learn.feedback ? `<div class="p-3 rounded-lg ${state.learn.feedback.ok?'bg-teal-soft text-teal':'bg-coral-soft text-coral'} text-sm font-medium">${state.learn.feedback.text}</div>` : ''}
+        </div>
+      </div>`;
+    renderSignRail(normalizeToISL(prompt).replace(/\//g,' '), document.getElementById('learn-practice-rail'));
+    return;
+  }
+  panel.innerHTML = `
+    <div class="grid lg:grid-cols-3 gap-4">
+      ${prompts.map((item,i)=>`<div class="card p-4">
+        <div class="flex justify-between items-center mb-2">
+          <p class="font-medium text-sm">${escapeHtml(item)}</p>
+          <span class="badge text-muted">${i+1}</span>
+        </div>
+        <div class="flex gap-1 overflow-x-auto">${normalizeToISL(item).replace(/\//g,' ').split('').slice(0,12).map(ch=>glyphSVG(ch,{size:30,color:'var(--teal)'})).join('')}</div>
+      </div>`).join('')}
+    </div>
+    <button class="mt-4 px-5 py-2 rounded-lg btn-primary text-sm font-semibold focus-ring" onclick="completeLesson('${lesson.id}')">Mark lesson complete</button>`;
+}
+
+function openLesson(id){
+  state.learn.activeLessonId = id;
+  state.learn.stage = 'demo';
+  state.learn.promptIndex = 0;
+  state.learn.feedback = null;
+  renderLearn();
+}
+function setLearnStage(stage){
+  state.learn.stage = stage;
+  state.learn.feedback = null;
+  renderLearn();
+}
+function selectPracticePrompt(prompt){
+  const id = state.learn.activeLessonId;
+  LESSON_PROMPTS[id] = Array.from(new Set([prompt, ...(LESSON_PROMPTS[id]||[])]));
+  state.learn.promptIndex = 0;
+  state.learn.stage = 'demo';
+  renderLearn();
+}
+function nextLessonPrompt(){
+  const prompts = LESSON_PROMPTS[state.learn.activeLessonId] || [];
+  state.learn.promptIndex = (state.learn.promptIndex + 1) % Math.max(1, prompts.length);
+  state.learn.feedback = null;
+  renderLearn();
+}
+async function checkLessonAnswer(){
+  const prompts = LESSON_PROMPTS[state.learn.activeLessonId] || [];
+  const expected = prompts[state.learn.promptIndex % prompts.length] || '';
+  const answer = document.getElementById('learn-answer').value.trim();
+  const ok = answer.toLowerCase() === expected.toLowerCase();
+  await Backend.request('/api/learn/attempt', {lessonId:state.learn.activeLessonId, expected, answer, ok});
+  state.learn.feedback = {ok, text: ok ? 'Correct. Move to the next prompt or finish the lesson.' : `Close. Expected: ${expected}`};
+  if(ok) bumpXP(4);
+  renderLearn();
+}
+
+async function completeLesson(id){
+  const p = state.progress;
+  const wasDone = p.lessonsDone.includes(id);
+  if(!wasDone){
+    p.lessonsDone.push(id);
+    bumpXP(15);
+    bumpStreak();
+    toast('Lesson complete — great work!');
+  }else{
+    toast('Reviewing lesson');
+  }
+  await Backend.request('/api/progress/save');
+  renderLearn();
+  checkBadges();
+}
+async function toggleFavorite(id){
+  const p = state.progress;
+  const idx = p.favorites.indexOf(id);
+  if(idx>-1) p.favorites.splice(idx,1); else p.favorites.push(id);
+  await saveProgress();
+  renderLearn();
+}
+
+/* ---- QUIZ ---- */
+let quizState = null;
+function renderQuiz(){
+  const el = document.getElementById('view-quiz');
+  el.innerHTML = `
+    <div>
+      <h1 class="font-display font-bold text-2xl md:text-3xl">${t('quiz')}</h1>
+      <p class="text-muted mt-1">Practice with quick games and track your best scores.</p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      ${quizModeCard('🤔','Guess the Sign','Identify the meaning of a shown sign')}
+      ${quizModeCard('🧩','Match the Gesture','Pair gestures with their words')}
+      ${quizModeCard('🗂️','Flash Cards','Flip through sign vocabulary')}
+      ${quizModeCard('⏱️','Timed Challenge','Answer as many as you can in 60s')}
+    </div>
+
+    <div class="card p-6" id="quiz-panel"></div>
+
+    <div class="card p-5">
+      <p class="font-display font-semibold mb-3">Leaderboard (this device)</p>
+      <div class="space-y-2" id="quiz-leaderboard"></div>
+    </div>
+  `;
+  startQuiz();
+  renderLeaderboard();
+}
+function quizModeCard(icon,title,desc){
+  return `<button onclick="startQuiz()" class="card p-4 text-left focus-ring hover:-translate-y-0.5 transition-transform">
+    <span class="text-xl">${icon}</span>
+    <p class="font-medium text-sm mt-2">${title}</p>
+    <p class="text-xs text-muted mt-1">${desc}</p>
+  </button>`;
+}
+
+function startQuiz(){
+  const questions = [...QUIZ_BANK].sort(()=>Math.random()-0.5).slice(0,5);
+  quizState = { questions, idx:0, score:0 };
+  renderQuizQuestion();
+}
+function renderQuizQuestion(){
+  const panel = document.getElementById('quiz-panel');
+  if(quizState.idx >= quizState.questions.length){
+    const pct = Math.round((quizState.score/quizState.questions.length)*100);
+    panel.innerHTML = `
+      <div class="text-center py-6">
+        <p class="text-4xl mb-2">${pct>=80?'🏆':pct>=50?'👍':'💪'}</p>
+        <p class="font-display font-bold text-2xl">${pct}% score</p>
+        <p class="text-muted text-sm mt-1">${quizState.score} of ${quizState.questions.length} correct</p>
+        <button class="mt-5 px-5 py-2 rounded-lg btn-primary font-semibold text-sm focus-ring" onclick="startQuiz()">Try again</button>
+      </div>`;
+    recordQuizResult(pct);
+    return;
+  }
+  const q = quizState.questions[quizState.idx];
+  panel.innerHTML = `
+    <div class="flex items-center justify-between mb-4">
+      <span class="badge text-muted">Question ${quizState.idx+1} / ${quizState.questions.length}</span>
+      <span class="badge text-amber bg-amber-soft px-2 py-0.5 rounded-full">+${state.progress.xp} XP</span>
+    </div>
+    <p class="font-medium mb-4">${q.q}</p>
+    <div class="grid sm:grid-cols-2 gap-3">
+      ${q.options.map((o,i)=>`<button class="card p-3 text-left text-sm focus-ring hover:border-teal" onclick="answerQuiz(${i})">${o}</button>`).join('')}
+    </div>
+  `;
+}
+function answerQuiz(i){
+  const q = quizState.questions[quizState.idx];
+  const correct = i === q.answer;
+  if(correct){ quizState.score++; bumpXP(10); toast('Correct! 🎉'); } else { toast('Not quite — keep going'); }
+  quizState.idx++;
+  renderQuizQuestion();
+}
+async function recordQuizResult(pct){
+  const p = state.progress;
+  p.lastQuizScores.unshift({pct, time:new Date().toLocaleDateString()});
+  p.lastQuizScores = p.lastQuizScores.slice(0,10);
+  if(pct > p.quizHigh) p.quizHigh = pct;
+  await saveProgress();
+  renderLeaderboard();
+  checkBadges();
+}
+function renderLeaderboard(){
+  const el = document.getElementById('quiz-leaderboard');
+  if(!el) return;
+  const rows = [
+    {name: state.user ? state.user.name : 'You', score: state.progress.quizHigh},
+    {name:'Priya S.', score:88}, {name:'Arjun M.', score:76}, {name:'Fathima K.', score:71}
+  ].sort((a,b)=>b.score-a.score);
+  el.innerHTML = rows.map((r,i)=>`
+    <div class="flex items-center gap-3 text-sm p-2 rounded-lg ${i===0?'bg-amber-soft':''}">
+      <span class="w-6 text-center font-mono text-xs text-muted">#${i+1}</span>
+      <span class="flex-1">${r.name}</span>
+      <span class="font-mono font-semibold">${r.score}%</span>
+    </div>`).join('');
+}
+
+/* ---- PROFILE ---- */
+function renderProfile(){
+  const el = document.getElementById('view-profile');
+  const p = state.progress;
+  const earned = computeBadges();
+  el.innerHTML = `
+    <div class="flex items-center gap-4">
+      <div class="w-16 h-16 rounded-full bg-violet-soft text-violet flex items-center justify-center font-display font-bold text-2xl">
+        ${state.user ? state.user.name[0].toUpperCase() : '?'}
+      </div>
+      <div>
+        <h1 class="font-display font-bold text-2xl">${state.user ? state.user.name : 'Guest'}</h1>
+        <p class="text-muted text-sm">${state.user ? state.user.email : 'Sign in to save your progress across visits'}</p>
+      </div>
+    </div>
+
+    ${!state.user ? `<div class="card p-4 flex items-center justify-between">
+      <p class="text-sm">You're browsing as a guest — progress is kept only for this session.</p>
+      <button class="px-4 py-2 rounded-lg btn-primary text-sm font-semibold focus-ring" onclick="openAuth('signin')">Sign in</button>
+    </div>` : ''}
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      ${statCard('🔥', p.streak, 'Day streak', 'coral')}
+      ${statCard('⭐', p.xp, 'XP earned', 'amber')}
+      ${statCard('📘', p.lessonsDone.length, 'Lessons done', 'teal')}
+      ${statCard('🎯', p.quizHigh+'%', 'Best quiz score', 'violet')}
+    </div>
+
+    <div class="card p-5">
+      <p class="font-display font-semibold mb-3">Badges</p>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        ${BADGES.map(b=>{
+          const has = earned.includes(b.id);
+          return `<div class="card p-3 text-center ${has?'':'opacity-40'}">
+            <p class="text-2xl">${b.icon}</p>
+            <p class="text-xs font-medium mt-1">${b.label}</p>
+            <p class="text-[10px] text-muted mt-0.5">${b.desc}</p>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="card p-5">
+        <p class="font-display font-semibold mb-3">Favorite lessons</p>
+        <div class="space-y-2">
+          ${p.favorites.length ? p.favorites.map(id=>{
+            const l = LESSON_TRACKS.flatMap(tr=>tr.lessons).find(x=>x.id===id);
+            return l ? `<div class="text-sm flex items-center justify-between p-2 rounded-lg bg-surface-2"><span>${l.title}</span><span class="text-coral">♥</span></div>` : '';
+          }).join('') : `<p class="text-sm text-muted italic">No favorites yet — heart a lesson in Learn ISL.</p>`}
+        </div>
+      </div>
+      <div class="card p-5">
+        <p class="font-display font-semibold mb-3">Conversation history</p>
+        <div class="space-y-2 max-h-56 overflow-y-auto">
+          ${p.convoHistory.length ? p.convoHistory.map(c=>`
+            <div class="text-sm flex items-center gap-2 p-2 rounded-lg bg-surface-2">
+              <span>${c.mode==='voice'?'🎙️':c.mode==='sign'?'🤟':'⌨️'}</span>
+              <span class="flex-1 truncate">${escapeHtml(c.text)}</span>
+              <span class="text-[10px] text-muted font-mono">${c.time}</span>
+            </div>`).join('') : `<p class="text-sm text-muted italic">Nothing yet — start a conversion on any tool.</p>`}
+        </div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="card p-5">
+        <p class="font-display font-semibold mb-3">Saved phrases</p>
+        <div class="flex flex-wrap gap-2">
+          ${(p.savedPhrases||[]).length ? p.savedPhrases.map(phrase=>`
+            <button class="text-xs px-3 py-1.5 rounded-full bg-surface-2 hover:bg-teal-soft hover:text-teal focus-ring" onclick="switchView('text2isl'); setTimeout(()=>{document.getElementById('t2i-input').value=${jsString(phrase)}; runText2ISL();}, 50)">${escapeHtml(phrase)}</button>
+          `).join('') : `<p class="text-sm text-muted italic">Save useful phrases from Text → ISL.</p>`}
+        </div>
+      </div>
+      <div class="card p-5">
+        <p class="font-display font-semibold mb-3">Prototype settings</p>
+        <div class="space-y-3 text-sm">
+          <label class="flex items-center justify-between gap-3">
+            <span>Auto-speak recognised ISL</span>
+            <input type="checkbox" ${state.settings.autoSpeak?'checked':''} onchange="state.settings.autoSpeak=this.checked; saveSettings(); toast('Setting updated')">
+          </label>
+          <label class="flex items-center justify-between gap-3">
+            <span>Slow sign animations</span>
+            <input type="checkbox" ${state.settings.slowSigns?'checked':''} onchange="state.settings.slowSigns=this.checked; document.body.classList.toggle('slow-signs', this.checked); saveSettings(); toast('Setting updated')">
+          </label>
+          <div class="flex flex-wrap gap-2 pt-2">
+            <button class="px-3 py-2 rounded-lg btn-ghost text-xs font-semibold focus-ring" onclick="exportProgress()">Export progress</button>
+            <button class="px-3 py-2 rounded-lg btn-ghost text-xs font-semibold focus-ring text-coral" onclick="resetProgress()">Reset progress</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    ${state.user ? `<button class="text-sm text-coral font-medium focus-ring" onclick="signOut()">Sign out</button>` : ''}
+  `;
+}
+
+function computeBadges(){
+  const p = state.progress;
+  const earned = [];
+  if(p.lessonsDone.length>=1) earned.push('first_lesson');
+  if(p.streak>=3) earned.push('streak3');
+  if(p.quizHigh>=80) earned.push('quiz_ace');
+  if(p.convoHistory.filter(c=>c.mode==='text').length>=5) earned.push('signer');
+  if((p.langsUsed||[]).length>=3) earned.push('polyglot');
+  return earned;
+}
+function checkBadges(){
+  const before = state._badgeCount || 0;
+  const now = computeBadges().length;
+  if(now > before) toast('New badge unlocked! 🏅');
+  state._badgeCount = now;
+}
+
+/* ---- shared helpers ---- */
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function fillSelect(id){
+  const el = document.getElementById(id);
+  el.innerHTML = LANGS.map(l=>`<option value="${l.code}">${l.label}</option>`).join('');
+  el.value = state.lang;
+}
+async function bumpXP(n){
+  state.progress.xp += n;
+  state.progress.dailyXP = Math.min((state.progress.dailyGoal||30), (state.progress.dailyXP||0) + n);
+  await saveProgress();
+  const sc = document.getElementById('sidebar-streak-count');
+  if(sc) sc.textContent = state.progress.streak;
+}
+async function bumpStreak(){
+  state.progress.streak += 1;
+  await saveProgress();
+}
+async function logConversation(mode, text, lang){
+  const p = state.progress;
+  p.convoHistory.unshift({mode, text, lang, version:APP_VERSION, time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})});
+  p.convoHistory = p.convoHistory.slice(0,20);
+  p.langsUsed = Array.from(new Set([...(p.langsUsed||[]), lang]));
+  await saveProgress();
+  checkBadges();
+}
+function progressPercent(value,total){ return Math.max(0, Math.min(100, Math.round((value/(total||1))*100))); }
+function modeIcon(mode){ return mode==='voice'?'🎙️':mode==='sign'?'🤟':'⌨️'; }
+function normalizeToISL(text){
+  const words = text.trim().replace(/[^\p{L}\p{N}\s]/gu,'').split(/\s+/).filter(Boolean);
+  const helper = new Set(['is','am','are','the','a','an','to','do','does']);
+  const filtered = words.filter(w=>!helper.has(w.toLowerCase()));
+  return filtered.length ? filtered.join(' / ').toUpperCase() : text.toUpperCase();
+}
+function confidenceFor(text){
+  return Math.max(72, Math.min(98, 99 - Math.floor(text.length/4) + (text.split(/\s+/).length % 7)));
+}
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); toast('Copied'); }
+  catch(e){ toast('Clipboard unavailable here'); }
+}
+function exportProgress(){
+  const blob = new Blob([JSON.stringify({app:'SignBridge AI', version:APP_VERSION, exportedAt:new Date().toISOString(), user:state.user, progress:state.progress, settings:state.settings}, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'signbridge-progress.json'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Progress export prepared');
+}
+async function resetProgress(){
+  if(!confirm('Reset all local progress for this prototype?')) return;
+  state.progress = { streak:0, xp:0, dailyGoal:30, dailyXP:0, lessonsDone:[], lessonAttempts:{}, quizHigh:0, favorites:[], lastQuizScores:[], convoHistory:[], savedPhrases:[], langsUsed:[] };
+  await saveProgress();
+  switchView(state.view);
+  toast('Progress reset');
+}
+async function savePhrase(text){
+  const clean = (text||'').trim();
+  if(!clean){ toast('Nothing to save yet'); return; }
+  state.progress.savedPhrases = Array.from(new Set([clean, ...(state.progress.savedPhrases||[])])).slice(0,12);
+  await saveProgress();
+  toast('Phrase saved');
+}
+
+/* ============================================================
+   AUTH (mock)
+============================================================ */
+function openAuth(mode){
+  state.authMode = mode;
+  document.getElementById('auth-title').textContent = mode==='signin' ? 'Sign in' : 'Create your account';
+  document.getElementById('auth-name-wrap').classList.toggle('hidden', mode==='signin');
+  document.getElementById('auth-switch').textContent = mode==='signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in';
+  document.getElementById('auth-modal').classList.remove('hidden');
+  document.getElementById('auth-modal').classList.add('flex');
+}
+function closeAuth(){
+  document.getElementById('auth-modal').classList.add('hidden');
+  document.getElementById('auth-modal').classList.remove('flex');
+}
+document.getElementById('auth-close').onclick = closeAuth;
+document.getElementById('auth-switch').onclick = ()=> openAuth(state.authMode==='signin' ? 'signup' : 'signin');
+document.getElementById('auth-modal').addEventListener('click', e=>{ if(e.target.id==='auth-modal') closeAuth(); });
+
+document.getElementById('auth-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = document.getElementById('auth-email').value.trim();
+  const name = document.getElementById('auth-name').value.trim();
+  state.user = { name: state.authMode==='signup' ? (name||email.split('@')[0]) : (state.user?.name || email.split('@')[0]), email };
+  await saveUser();
+  closeAuth();
+  updateAuthUI();
+  toast(state.authMode==='signup' ? 'Account created — welcome!' : 'Signed in');
+});
+
+async function signOut(){
+  state.user = null;
+  await saveUser();
+  updateAuthUI();
+  renderProfile();
+  toast('Signed out');
+}
+function updateAuthUI(){
+  const label = document.getElementById('auth-label');
+  const avatar = document.getElementById('auth-avatar');
+  if(state.user){
+    label.textContent = state.user.name.split(' ')[0];
+    avatar.textContent = state.user.name[0].toUpperCase();
+    document.getElementById('topbar-greeting').textContent = `${t('greet')}, ${state.user.name.split(' ')[0]}`;
+  }else{
+    label.textContent = 'Sign in';
+    avatar.textContent = '?';
+    document.getElementById('topbar-greeting').textContent = t('greet');
+  }
+}
+document.getElementById('auth-btn').onclick = ()=> state.user ? switchView('profile') : openAuth('signin');
+
+/* ============================================================
+   THEME + LANGUAGE
+============================================================ */
+function applyTheme(){
+  document.documentElement.classList.toggle('dark', state.theme==='dark');
+  document.getElementById('theme-icon').textContent = state.theme==='dark' ? '☀️' : '🌙';
+}
+document.getElementById('theme-toggle').onclick = ()=>{
+  state.theme = state.theme==='dark' ? 'light' : 'dark';
+  applyTheme();
+};
+
+function buildLangSelect(){
+  const sel = document.getElementById('lang-select');
+  sel.innerHTML = LANGS.map(l=>`<option value="${l.code}">${l.label}</option>`).join('');
+  sel.value = state.lang;
+  sel.onchange = ()=>{
+    state.lang = sel.value;
+    buildNav();
+    updateAuthUI();
+    switchView(state.view);
+  };
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+async function init(){
+  await loadProgress();
+  await loadUser();
+  await loadSettings();
+  applyTheme();
+  document.body.classList.toggle('slow-signs', state.settings.slowSigns);
+  buildLangSelect();
+  buildNav();
+  updateAuthUI();
+  state._badgeCount = computeBadges().length;
+  switchView('home');
+}
+init();
+</script>
+</body>
+</html>
